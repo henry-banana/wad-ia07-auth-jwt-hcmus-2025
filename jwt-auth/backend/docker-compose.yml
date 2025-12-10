@@ -1,0 +1,26 @@
+name: jwt-auth-backend-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jwt-auth-db-dev
+    restart: always
+    command: -p ${DATABASE_PORT}
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+      # Use trust for local development (no password needed)
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "${DATABASE_PORT}:5433"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data_dev:
