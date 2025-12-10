@@ -1,27 +1,30 @@
-# Render Blueprint - Auto-deploy configuration
+# ==========================================
+# Render Blueprint - Docker Deployment
+# ==========================================
 # https://render.com/docs/blueprint-spec
 
 services:
   - type: web
     name: jwt-auth-api
-    runtime: node
-    region: singapore # Gần Vietnam nhất
+    runtime: docker # ⭐ Sử dụng Docker
+    region: singapore # Gần Vietnam nhất (hoặc chọn oregon cho US)
     plan: free
-    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
-    startCommand: npm run start:prod
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /api
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 3000
       - key: DATABASE_URL
-        sync: false # Set manually in Render dashboard
+        sync: false # ⚠️ Set manually: Neon connection string
       - key: JWT_SECRET
-        generateValue: true # Render auto-generate
+        generateValue: true # Render auto-generate 32-char secret
       - key: JWT_REFRESH_SECRET
-        generateValue: true
+        generateValue: true # Render auto-generate (khác JWT_SECRET)
       - key: JWT_ACCESS_EXPIRATION
         value: 15m
       - key: JWT_REFRESH_EXPIRATION
         value: 7d
       - key: CLIENT_URL
-        sync: false # Set after frontend deploy
+        sync: false # ⚠️ Set after frontend deploy (Vercel URL)
