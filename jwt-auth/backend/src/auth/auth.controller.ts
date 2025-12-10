@@ -29,8 +29,8 @@ export class AuthController {
     // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
-      secure: false, // Set true nếu dùng HTTPS
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -52,8 +52,8 @@ export class AuthController {
     // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
-      secure: false, // Set true nếu dùng HTTPS
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
@@ -82,8 +82,8 @@ export class AuthController {
     // Update cookie with new refresh token
     res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
-      secure: false, // Set true nếu dùng HTTPS
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -109,8 +109,8 @@ export class AuthController {
     // Clear cookie - phải match các options khi set
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
     });
 
