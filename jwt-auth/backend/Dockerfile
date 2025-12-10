@@ -48,5 +48,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s \
     CMD node -e "require('http').get('http://localhost:3000/api', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start application
-CMD ["node", "dist/src/main.js"]
+# Start application (run migrations first, then start server)
+CMD sh -c "npx prisma migrate deploy && node dist/src/main.js"
