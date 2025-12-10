@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router-dom";
 import { loginSchema, type LoginInput } from "../schemas/auth.schema";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import {
   Card,
   CardHeader,
@@ -90,16 +90,7 @@ export function LoginPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between text-sm slide-in-left stagger-3">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 focus:ring-2 transition-all cursor-pointer"
-                  />
-                  <span className="text-gray-600 group-hover:text-gray-900 transition-colors">
-                    Ghi nhớ đăng nhập
-                  </span>
-                </label>
+              <div className="flex items-center justify-end text-sm slide-in-left stagger-3">
                 <Link
                   to="/forgot-password"
                   className="text-primary-600 hover:text-primary-700 font-semibold hover:underline transition-all"

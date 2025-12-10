@@ -20,8 +20,26 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post("register")
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Response({ passthrough: true }) res: ExpressResponse
+  ) {
+    const result = await this.authService.register(registerDto);
+
+    // Set refresh token as HTTP-only cookie
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: false, // Set true nếu dùng HTTPS
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Return only access token and user (NO refresh token in response body)
+    return {
+      user: result.user,
+      accessToken: result.accessToken,
+    };
   }
 
   @Post("login")
@@ -33,9 +51,10 @@ export class AuthController {
 
     // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", result.refreshToken, {
-      httpOnly: true, // Cannot be accessed by JavaScript
-      secure: process.env.NODE_ENV === "production", // HTTPS only in production
-      sameSite: "strict", // CSRF protection
+      httpOnly: true,
+      secure: false, // Set true nếu dùng HTTPS
+      sameSite: "lax",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -63,8 +82,9 @@ export class AuthController {
     // Update cookie with new refresh token
     res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: false, // Set true nếu dùng HTTPS
+      sameSite: "lax",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -86,8 +106,13 @@ export class AuthController {
       await this.authService.logout(req.user.id, refreshToken);
     }
 
-    // Clear cookie
-    res.clearCookie("refreshToken");
+    // Clear cookie - phải match các options khi set
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+    });
 
     return { message: "Logout successful" };
   }

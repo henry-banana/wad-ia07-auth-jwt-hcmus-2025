@@ -9,10 +9,22 @@ async function bootstrap() {
   // Enable cookie parser
   app.use(cookieParser());
 
-  // Enable CORS
+  // Configure CORS for production and development
+  const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+  ];
+
+  // Add production frontend URL from environment
+  if (process.env.CLIENT_URL) {
+    allowedOrigins.push(process.env.CLIENT_URL);
+  }
+
   app.enableCors({
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: allowedOrigins,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
   });
 
   // Enable validation
@@ -28,8 +40,11 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  
+  // Listen on 0.0.0.0 for cloud deployment (Render, Railway, etc.)
+  await app.listen(port, "0.0.0.0");
 
-  console.log(`🚀 Application is running on: http://localhost:${port}/api`);
+  console.log(`🚀 Application is running on port ${port}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
 }
 bootstrap();

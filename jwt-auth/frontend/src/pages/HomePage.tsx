@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { Button } from "../components/ui/Button";
 import { AnimatedBackground } from "../components/ui/AnimatedBackground";
 import { Shield, Lock, Key, ArrowRight, CheckCircle2 } from "lucide-react";

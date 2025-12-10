@@ -1,8 +1,8 @@
 import {
   createContext,
-  useContext,
   useState,
   useEffect,
+  useCallback,
   type ReactNode,
 } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +15,10 @@ import type {
 } from "../types/auth.types";
 import toast from "react-hot-toast";
 
-interface AuthContextType {
+// Storage key for multi-tab sync
+const AUTH_STORAGE_KEY = "auth_logout_event";
+
+export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -33,14 +36,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isInitializing, setIsInitializing] = useState(true);
   const queryClient = useQueryClient();
 
+  // Handle logout (shared function for multi-tab sync)
+  const handleLogout = useCallback(() => {
+    tokenStorage.clearAccessToken();
+    setUser(null);
+    queryClient.clear();
+  }, [queryClient]);
+
+  // Multi-tab synchronization: Listen for logout events from other tabs
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === AUTH_STORAGE_KEY && event.newValue === "logout") {
+        // Another tab triggered logout
+        handleLogout();
+        toast.success("Đã đăng xuất từ tab khác");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [handleLogout]);
+
+  // Silent token refresh before expiration
+  useEffect(() => {
+    if (!user) return;
+
+    const scheduleRefresh = () => {
+      const timeUntilExpiry = tokenStorage.getTimeUntilExpiry();
+      // Refresh 1 minute before expiration
+      const refreshTime = Math.max((timeUntilExpiry - 60) * 1000, 0);
+
+      if (refreshTime <= 0) {
+        // Token already expired or expiring very soon, refresh now
+        performRefresh();
+        return;
+      }
+
+      return setTimeout(() => {
+        performRefresh();
+      }, refreshTime);
+    };
+
+    const performRefresh = async () => {
+      try {
+        const refreshResult = await authApi.refresh();
+        tokenStorage.setAccessToken(refreshResult.accessToken);
+        console.log("🔄 Token refreshed silently");
+      } catch (error) {
+        console.error("Silent refresh failed:", error);
+        handleLogout();
+      }
+    };
+
+    const timeoutId = scheduleRefresh();
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [user, handleLogout]);
+
   // Initialize: Check if user is logged in (via refresh token cookie)
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // Nếu không có access token trong memory, thử refresh từ cookie trước
+        if (!tokenStorage.hasAccessToken()) {
+          try {
+            const refreshResult = await authApi.refresh();
+            tokenStorage.setAccessToken(refreshResult.accessToken);
+          } catch {
+            // Không có refresh token hợp lệ, user chưa đăng nhập
+            setUser(null);
+            setIsInitializing(false);
+            return;
+          }
+        }
+
+        // Sau khi có access token, lấy profile
         const userData = await authApi.getProfile();
         setUser(userData);
       } catch (error) {
         // User not authenticated
+        tokenStorage.clearAccessToken();
         setUser(null);
       } finally {
         setIsInitializing(false);
@@ -84,10 +160,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logoutMutation = useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
-      // Chỉ xóa access token (refresh token cookie backend tự xóa)
-      tokenStorage.clearAccessToken();
-      setUser(null);
-      queryClient.clear();
+      // Broadcast logout event to other tabs
+      localStorage.setItem(AUTH_STORAGE_KEY, "logout");
+      localStorage.removeItem(AUTH_STORAGE_KEY); // Clear immediately after broadcast
+      
+      handleLogout();
       toast.success("Đã đăng xuất");
     },
   });
@@ -110,10 +187,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-}
+// Export context for useAuth hook
+export { AuthContext };

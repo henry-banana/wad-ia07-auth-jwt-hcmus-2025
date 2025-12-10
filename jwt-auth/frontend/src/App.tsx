@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "./hooks/useAuth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -42,9 +42,14 @@ function App() {
             }
           />
 
-          {/* Protected Routes */}
+          {/* Protected Routes - All authenticated users */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
+
+          {/* Admin Only Routes - Role-based access control */}
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+            <Route path="/admin" element={<DashboardPage />} />
           </Route>
 
           {/* Catch all */}

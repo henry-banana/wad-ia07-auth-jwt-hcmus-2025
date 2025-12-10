@@ -46,7 +46,7 @@ export const authApi = {
 
   // Get current user profile
   getProfile: async (): Promise<User> => {
-    const response = await axiosClient.get<User>("/user/me");
+    const response = await axiosClient.get<User>("/auth/me");
     return response.data;
   },
 };
