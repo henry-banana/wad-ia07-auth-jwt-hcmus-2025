@@ -1,30 +1,23 @@
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
+import { ConfigService } from "@nestjs/config";
 import cookieParser from "cookie-parser";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable cookie parser
+  // Enable cookie parser - REQUIRED for refresh token extraction
   app.use(cookieParser());
 
-  // Configure CORS for production and development
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-  ];
+  const configService = app.get(ConfigService);
 
-  // Add production frontend URL from environment
-  if (process.env.CLIENT_URL) {
-    allowedOrigins.push(process.env.CLIENT_URL);
-  }
-
+  // Configure CORS for cross-origin authentication (no proxy)
   app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
+    origin: configService.get("FRONTEND_URL") || "http://localhost:5173",
+    credentials: true, // REQUIRED for cookies
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   });
 
   // Enable validation

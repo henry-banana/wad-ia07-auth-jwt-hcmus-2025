@@ -10,7 +10,7 @@ const axiosClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // QUAN TRỌNG: Cho phép gửi cookies
+  withCredentials: true, // REQUIRED: Enable sending cookies cross-origin
 });
 
 // Request Interceptor: Attach Access Token
